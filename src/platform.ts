@@ -2,6 +2,8 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ExamplePlatformAccessory } from './platformAccessory';
+import AmbientWeatherApi from 'ambient-weather-api';
+import {AmbientWeatherPlatformConfig} from './config';
 
 /**
  * HomebridgePlatform
@@ -14,6 +16,7 @@ export class AmbientWeatherHomebridgePlatform implements DynamicPlatformPlugin {
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
+  private remoteApi: AmbientWeatherApi;
 
   constructor(
     public readonly log: Logger,
@@ -21,6 +24,12 @@ export class AmbientWeatherHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.log.debug('Finished initializing platform:', this.config.name);
+    const ambientConfig = config as AmbientWeatherPlatformConfig;
+
+    this.remoteApi = new AmbientWeatherApi({
+      apiKey: ambientConfig.apiKey,
+      applicationKey: ambientConfig.applicationKey,
+    });
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
@@ -29,7 +38,12 @@ export class AmbientWeatherHomebridgePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
-      this.discoverDevices();
+      // this.discoverDevices();
+      this.remoteApi.userDevices().then((devices) => {
+        for(const device of devices) {
+          this.log.info('device', device);
+        }
+      });
     });
   }
 
